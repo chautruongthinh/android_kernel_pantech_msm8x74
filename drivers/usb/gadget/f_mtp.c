@@ -563,6 +563,9 @@ static ssize_t mtp_read(struct file *fp, char __user *buf,
 
 	DBG(cdev, "mtp_read(%d)\n", count);
 
+	if (dev == NULL || dev->ep_out == NULL)
+		return -ENODEV;
+
 	len = ALIGN(count, dev->ep_out->maxpacket);
 
 	if (len > mtp_rx_req_len)
@@ -911,6 +914,12 @@ static void receive_file_work(struct work_struct *data)
 			if (count < read_req->length)
 				read_req->actual = (read_req->actual > count ?
 						count : read_req->actual);
+
+			if (read_req->status) {
+				r = read_req->status;
+				break;
+			}
+
 			/* if xfer_file_length is 0xFFFFFFFF, then we read until
 			 * we get a zero length packet
 			 */
